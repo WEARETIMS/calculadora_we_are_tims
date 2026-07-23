@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de ahorro · We Are TIMS</title>
+  <meta name="description" content="Descubre paso a paso cuánto ahorras contratando talento remoto en LATAM con We Are TIMS." />
+
+  <!-- Favicon: cuadrado índigo (mismo motivo que la marca) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%234235E3'/%3E%3C/svg%3E" />
+
+  <!-- Vista previa al compartir (WhatsApp, LinkedIn, etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Calculadora de ahorro · We Are TIMS" />
+  <meta property="og:description" content="Calcula en segundos cuánto ahorras contratando talento remoto en LATAM frente a España." />
+  <meta property="og:locale" content="es_ES" />
+  <!-- og:image y og:url: añadir la URL absoluta tras el deploy -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Calculadora de ahorro · We Are TIMS" />
+  <meta name="twitter:description" content="Calcula en segundos cuánto ahorras contratando talento remoto en LATAM frente a España." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ============================ HEADER ============================ -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img class="brand-logo" src="assets/tims-logo.png" alt="We Are TIMS" />
+      </div>
+      <div class="topbar-right">
+        <div class="seg-toggle" role="group" aria-label="Idioma / Language">
+          <button type="button" class="seg-toggle-btn is-active" data-lang="es">ES</button>
+          <button type="button" class="seg-toggle-btn" data-lang="en">EN</button>
+        </div>
+        <div class="seg-toggle" role="group" aria-label="Moneda / Currency">
+          <button type="button" class="seg-toggle-btn is-active" data-ccy="EUR">EUR €</button>
+          <button type="button" class="seg-toggle-btn" data-ccy="USD">USD $</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Estado de carga / error -->
+  <div id="status" class="status" hidden></div>
+
+  <!-- ============================ WIZARD ============================ -->
+  <main class="wizard" id="wizard" hidden>
+
+    <!-- Progreso -->
+    <div class="progress">
+      <div class="progress-meta">
+        <span id="progressLabel"></span>
+        <span id="progressCount"></span>
+      </div>
+      <div class="progress-track"><span id="progressFill"></span></div>
+    </div>
+
+    <!-- ---------- PASO 1: PERFIL + POSICIÓN ---------- -->
+    <section class="step" data-step="1">
+      <h2 class="step-q" data-i18n="q1">¿Qué perfil necesitas?</h2>
+      <p class="step-help" data-i18n="q1help">Elige el área del profesional que quieres incorporar.</p>
+      <div class="opt-grid" id="perfilGrid"></div>
+
+      <div class="sub-field" id="posicionWrap" hidden>
+        <label for="posicion" data-i18n="posLabel">Posición concreta</label>
+        <div class="select-wrap"><select id="posicion"></select></div>
+      </div>
+    </section>
+
+    <!-- ---------- PASO 2: NIVEL + PERSONAS ---------- -->
+    <section class="step" data-step="2" hidden>
+      <h2 class="step-q" data-i18n="q2">¿Qué nivel y cuántas personas?</h2>
+      <p class="step-help" data-i18n="q2help">El nivel de experiencia influye en la tarifa.</p>
+      <div class="opt-grid three" id="seniorityGrid"></div>
+
+      <div class="sub-field center">
+        <label data-i18n="personasLabel">Número de personas</label>
+        <div class="stepper">
+          <button type="button" class="step-btn" id="peopleMinus" aria-label="−">−</button>
+          <span class="step-value" id="peopleValue">1</span>
+          <button type="button" class="step-btn" id="peoplePlus" aria-label="+">+</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- PASO 3: PAÍS ---------- -->
+    <section class="step" data-step="3" hidden>
+      <h2 class="step-q" data-i18n="q3">¿Desde qué país?</h2>
+      <p class="step-help" data-i18n="q3help">Cada tarjeta muestra el coste mensual del profesional. Verás marcado el más barato.</p>
+      <div class="country-grid" id="paisGrid"></div>
+    </section>
+
+    <!-- ---------- PASO 4: COSTE EN ESPAÑA ---------- -->
+    <section class="step" data-step="4" hidden>
+      <h2 class="step-q" data-i18n="q4">¿Cuánto te costaría en España?</h2>
+      <p class="step-help" data-i18n="q4help">Introduce el salario bruto anual; calcularemos el coste-empresa real.</p>
+
+      <div class="sub-field">
+        <label for="salario" id="salarioLabel">Salario bruto anual (€)</label>
+        <div class="input-money big">
+          <span class="prefix" id="salarioPrefix">€</span>
+          <input type="number" id="salario" min="0" step="1000" value="30000" inputmode="numeric" />
+        </div>
+        <p class="field-hint" data-i18n="salarioHint">Escribe lo que te cuesta ese trabajador: el salario bruto anual que le pagarías en España.</p>
+        <div class="breakdown" id="breakdownEspana"></div>
+      </div>
+
+      <div class="sub-field">
+        <label data-i18n="recLabel2">Tipo de reclutamiento</label>
+        <div class="opt-grid" id="reclutamientoGrid">
+          <button type="button" class="opt is-active" data-rec="interno">
+            <span class="opt-title" data-i18n="interno">Interno</span>
+            <span class="opt-sub" data-i18n="internoSub">Sin coste extra</span>
+          </button>
+          <button type="button" class="opt" data-rec="externo">
+            <span class="opt-title" data-i18n="externo">Externo</span>
+            <span class="opt-sub" id="externoSub">+15% reclutamiento</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ajustes avanzados: solo los porcentajes (plegable, separado de primas) -->
+      <details class="advanced">
+        <summary>
+          <span data-i18n="advanced">Ajustes avanzados</span>
+          <span class="chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="advanced-body">
+          <div class="adv-row">
+            <label for="ssPct" data-i18n="ssLabel">Seguridad Social (%)</label>
+            <div class="input-money small"><input type="number" id="ssPct" min="0" step="0.5" value="32" /><span class="suffix">%</span></div>
+          </div>
+          <div class="adv-row" id="recPctRow" hidden>
+            <label for="recPct" data-i18n="recPctLabel">Reclutamiento externo (%)</label>
+            <div class="input-money small"><input type="number" id="recPct" min="0" step="0.5" value="15" /><span class="suffix">%</span></div>
+          </div>
+        </div>
+      </details>
+
+      <!-- Primas: sección propia, visible, con cajitas seleccionables -->
+      <div class="sub-field primas-section">
+        <label data-i18n="primasTitle">Primas (extras)</label>
+        <p class="primas-note" data-i18n="primasNote">Extras opcionales. Toca para añadirlas al coste TIMS.</p>
+        <div id="primasContainer" class="primas"></div>
+      </div>
+    </section>
+
+    <!-- ---------- PASO 5: RESULTADO ---------- -->
+    <section class="step step-result" data-step="5" hidden>
+      <div class="reveal">
+        <p class="reveal-summary" id="revealSummary"></p>
+        <h2 class="reveal-headline" id="revealHeadline"></h2>
+
+        <!-- Tarjeta protagonista (degradado de marca) -->
+        <div class="result-card" id="resultCard">
+          <span class="result-label" data-i18n="resultLabel">Ahorro mensual</span>
+          <div class="result-hero" id="resAhorroMensual">—</div>
+
+          <div class="split">
+            <div class="split-caption" id="splitCaption"></div>
+            <div class="split-bar">
+              <span class="seg seg-tims" id="segTims"></span>
+              <span class="seg seg-save" id="segSave"></span>
+            </div>
+            <div class="split-legend">
+              <span class="lg"><i class="dot dot-tims"></i><span data-i18n="vaTims">Coste TIMS</span><b id="legTims">—</b></span>
+              <span class="lg"><i class="dot dot-save"></i><span data-i18n="tuAhorro">Tu ahorro</span><b id="legSave">—</b></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Proyección (tira de cifras, sin cajas) -->
+        <div class="stat-strip">
+          <div class="stat"><strong id="kpiAnual">—</strong><span data-i18n="kpiAnnual">Al año</span></div>
+          <div class="stat"><strong id="kpi3y">—</strong><span data-i18n="kpi3y">En 3 años</span></div>
+        </div>
+
+        <ul class="why-list">
+          <li data-i18n="why1">Talento latinoamericano altamente cualificado</li>
+          <li data-i18n="why3">Sin costes de seguridad social ni IRPF</li>
+          <li data-i18n="why4">Onboarding en menos de 2 semanas</li>
+        </ul>
+
+        <p class="trust-line">
+          <span data-i18n="trustOnboard">Onboarding en 48 h</span>
+          <span class="sep" aria-hidden="true">·</span>
+          <span data-i18n="trustAvail">Disponibilidad inmediata</span>
+        </p>
+
+        <div class="cta-row">
+          <button class="cta" id="ctaSchedule" type="button" data-i18n="optScheduleTitle">Agendar una reunión</button>
+          <button class="cta cta-secondary" id="ctaContact" type="button" data-i18n="optContactTitle">Que te contactemos</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navegación -->
+    <div class="wizard-nav">
+      <button type="button" class="nav-back" id="navBack" data-i18n="back">← Atrás</button>
+      <button type="button" class="nav-next" id="navNext" data-i18n="next">Continuar →</button>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p id="rateNote"></p>
+  </footer>
+
+  <!-- ============================ MODAL DE CONTACTO ============================ -->
+  <div class="modal-overlay" id="contactModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="contactFormTitle">
+      <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">×</button>
+
+      <!-- Paso Agendar: pedir empresa/nombre antes de abrir Calendly -->
+      <form class="modal-step contact-form" id="scheduleForm" hidden>
+        <h3 class="modal-title" data-i18n="scheduleTitle">Antes de agendar</h3>
+        <p class="advanced-note" data-i18n="scheduleSub">Cuéntanos con quién hablará el equipo, para preparar la reunión.</p>
+        <label class="form-row"><span data-i18n="scheduleCompany">Empresa</span><input type="text" name="empresa" /></label>
+        <div class="form-actions">
+          <button type="button" class="link-back" id="scheduleBack" data-i18n="formBack">Cancelar</button>
+          <button type="submit" class="btn-primary" id="scheduleSubmit" data-i18n="scheduleGo">Continuar a Calendly</button>
+        </div>
+      </form>
+
+      <!-- Formulario de datos -->
+      <form class="modal-step contact-form" id="contactForm" hidden>
+        <h3 class="modal-title" id="contactFormTitle" data-i18n="optContactTitle">Que te contactemos</h3>
+        <label class="form-row"><span data-i18n="formName">Nombre</span><input type="text" name="nombre" required /></label>
+        <label class="form-row"><span data-i18n="formEmail">Email</span><input type="email" name="email" required /></label>
+        <label class="form-row"><span data-i18n="formPhone">Teléfono</span><input type="tel" name="telefono" /></label>
+        <label class="form-row"><span data-i18n="formCompany">Empresa (opcional)</span><input type="text" name="empresa" /></label>
+        <label class="form-row"><span data-i18n="formMessage">Mensaje (opcional)</span><textarea name="mensaje" rows="3"></textarea></label>
+        <p class="form-context" id="formContext"></p>
+        <p class="form-error" id="formError" hidden></p>
+        <div class="form-actions">
+          <button type="button" class="link-back" id="formBack" data-i18n="formBack">Volver</button>
+          <button type="submit" class="btn-primary" id="formSubmit" data-i18n="formSend">Enviar</button>
+        </div>
+      </form>
+
+      <!-- Paso C: confirmación -->
+      <div class="modal-step contact-success" id="contactSuccess" hidden>
+        <span class="success-check" id="iconSuccess"></span>
+        <h3 class="modal-title" data-i18n="successTitle">¡Gracias!</h3>
+        <p data-i18n="successMsg">Hemos recibido tus datos. Un experto de TIMS te contactará muy pronto.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

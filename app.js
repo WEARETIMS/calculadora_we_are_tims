@@ -81,12 +81,12 @@ const I18N = {
     contactTitle: "¿Cómo prefieres continuar?",
     optScheduleTitle: "Agendar una reunión", optScheduleSub: "Elige un hueco en nuestro calendario",
     optContactTitle: "Que te contactemos", optContactSub: "Déjanos tus datos y te llamamos",
-    formName: "Nombre", formEmail: "Email", formPhone: "Teléfono", formCompany: "Empresa (opcional)",
+    formName: "Nombre", formEmail: "Email", formPhone: "Teléfono", formCompany: "Empresa",
     formMessage: "Mensaje (opcional)",
     scheduleTitle: "Antes de agendar", scheduleSub: "Cuéntanos con quién hablará el equipo, para preparar la reunión.",
     scheduleCompany: "Empresa", scheduleGo: "Continuar a Calendly",
     formSend: "Enviar", formBack: "Cancelar", formSending: "Enviando…",
-    validationMsg: "Revisa el nombre y el email antes de enviar.",
+    validationMsg: "Revisa el nombre, el email y la empresa antes de enviar.",
     errorMsg: "No se pudo enviar. Inténtalo de nuevo en un momento.",
     successTitle: "¡Gracias!", successMsg: "Hemos recibido tus datos. Un experto de TIMS te contactará muy pronto.",
     contactCtxLabel: "Tu simulación", ctxAhorro: "ahorro estimado",
@@ -130,12 +130,12 @@ const I18N = {
     contactTitle: "How would you like to continue?",
     optScheduleTitle: "Schedule a meeting", optScheduleSub: "Pick a slot in our calendar",
     optContactTitle: "Get contacted", optContactSub: "Leave your details and we'll reach out",
-    formName: "Name", formEmail: "Email", formPhone: "Phone", formCompany: "Company (optional)",
+    formName: "Name", formEmail: "Email", formPhone: "Phone", formCompany: "Company",
     formMessage: "Message (optional)",
     scheduleTitle: "Before you book", scheduleSub: "Tell us who the team will be speaking with, so we can prepare the meeting.",
     scheduleCompany: "Company", scheduleGo: "Continue to Calendly",
     formSend: "Send", formBack: "Cancel", formSending: "Sending…",
-    validationMsg: "Please check your name and email before sending.",
+    validationMsg: "Please check your name, email and company before sending.",
     errorMsg: "Couldn't send. Please try again in a moment.",
     successTitle: "Thank you!", successMsg: "We've received your details. A TIMS expert will contact you very soon.",
     contactCtxLabel: "Your simulation", ctxAhorro: "estimated savings",
@@ -725,11 +725,12 @@ function bindEvents() {
     const errEl = $("#formError");
     const data = Object.fromEntries(new FormData(form).entries());
 
-    // Validación: nombre y email obligatorios; email con formato válido.
+    // Validación: nombre, email y empresa obligatorios; email con formato válido.
     const nombre = (data.nombre || "").trim();
     const email = (data.email || "").trim();
+    const empresa = (data.empresa || "").trim();
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!nombre || !emailOk) {
+    if (!nombre || !emailOk || !empresa) {
       errEl.textContent = t("validationMsg");
       errEl.hidden = false;
       return;
@@ -742,7 +743,7 @@ function bindEvents() {
       // El backend espera form-data URL-encoded. URLSearchParams pone solo el
       // Content-Type application/x-www-form-urlencoded (petición "simple", sin
       // preflight CORS) — NO añadimos cabecera a mano.
-      const body = leadBody({ tipo: "formulario", nombre, email, empresa: data.empresa, telefono: data.telefono, mensaje: data.mensaje });
+      const body = leadBody({ tipo: "formulario", nombre, email, empresa, telefono: data.telefono, mensaje: data.mensaje });
       const res = await fetch(CONTACT_ENDPOINT, { method: "POST", body });
       const result = await res.json();
       if (result && result.ok) {

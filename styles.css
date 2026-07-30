@@ -32,6 +32,16 @@
 /* El atributo [hidden] debe ganar a cualquier display de clase (modal, pasos, etc.) */
 [hidden] { display: none !important; }
 
+/* Evita que iOS reescale el texto al girar el móvil */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* Si iOS convierte algún número/fecha en enlace, que NO se vea azul ni subrayado */
+a[href^="tel:"], a[x-apple-data-detectors] {
+  color: inherit !important;
+  text-decoration: none !important;
+  pointer-events: none;
+}
+
 body {
   margin: 0;
   font-family: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
@@ -42,6 +52,8 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  /* Quita el destello azul al tocar en móvil */
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3 { margin: 0; letter-spacing: -0.02em; }
@@ -312,10 +324,19 @@ select:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px
   .step-q { font-size: 1.5rem; }
   .opt-grid, .opt-grid.three { grid-template-columns: 1fr 1fr; }
   .country-grid { grid-template-columns: 1fr 1fr; }
-  .result-hero { font-size: 2.7rem; }
+  .result-hero { font-size: 2.5rem; }
   .topbar-inner { flex-wrap: wrap; gap: 12px; }
   .cta-row { flex-direction: column; }
+  /* 16px en campos: evita el zoom automático de iOS al enfocarlos */
+  input, select, textarea { font-size: 16px !important; }
+  #salario { font-size: 1.3rem !important; } /* el salario sigue grande (>16px, no dispara zoom) */
+  .wizard { padding: 22px 16px 30px; }
+  .topbar-inner { padding: 14px 16px; }
+  /* la tarjeta de país entra mejor: no truncar el precio */
+  .country { padding: 12px; }
+  .country-badges { position: static; flex-direction: row; margin-top: 6px; }
 }
 @media (max-width: 380px) {
   .opt-grid, .opt-grid.three, .country-grid { grid-template-columns: 1fr; }
+  .seg-toggle-btn { padding: 6px 9px; }
 }

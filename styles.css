@@ -32,6 +32,11 @@
 /* El atributo [hidden] debe ganar a cualquier display de clase (modal, pasos, etc.) */
 [hidden] { display: none !important; }
 
+/* iOS Safari pinta el texto de los <button> en azul (color de sistema) si no
+   tiene color propio. Forzamos que hereden el color de texto normal; las reglas
+   con color explicito (botones blancos, grises, etc.) siguen ganando. */
+button { color: inherit; }
+
 /* Evita que iOS reescale el texto al girar el móvil */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 

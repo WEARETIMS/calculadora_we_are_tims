@@ -98,6 +98,7 @@ const I18N = {
     tuAhorro: "Tu ahorro", vaTims: "Coste TIMS",
     kpiMonthly: "Al mes", kpiAnnual: "Al año", kpi3y: "En 3 años",
     tagRec: "Recomendado", tagCheap: "Más barato",
+    paisRecom: "Recomendados", paisVerOtros: "Ver otros países", paisOcultarOtros: "Ocultar otros países",
     senJuniorSub: "0–2 años de experiencia", senMidSub: "2–5 años", senSeniorSub: "5+ años",
     loading: "Cargando datos y tipo de cambio…",
     errorTitle: "No se pudieron cargar los datos.", errorHelp: "Comprueba tu conexión o inténtalo de nuevo.",
@@ -147,6 +148,7 @@ const I18N = {
     tuAhorro: "Your savings", vaTims: "TIMS cost",
     kpiMonthly: "Monthly", kpiAnnual: "Yearly", kpi3y: "Over 3 years",
     tagRec: "Recommended", tagCheap: "Cheapest",
+    paisRecom: "Recommended", paisVerOtros: "Show other countries", paisOcultarOtros: "Hide other countries",
     senJuniorSub: "0–2 years of experience", senMidSub: "2–5 years", senSeniorSub: "5+ years",
     loading: "Loading data and exchange rate…",
     errorTitle: "Could not load the data.", errorHelp: "Check your connection or try again.",
@@ -345,28 +347,42 @@ function renderSeniority() {
   }
 }
 
+let paisOtrosAbierto = false;
 function renderPaisGrid() {
-  const grid = $("#paisGrid");
-  grid.innerHTML = "";
+  const cont = $("#paisGrid");
   const cheapest = paisMasBarato(state.paises);
-  for (const pais of state.paises) {
+  const recom = state.paises.filter((p) => PAISES_RECOMENDADOS.includes(p));
+  const otros = state.paises.filter((p) => !PAISES_RECOMENDADOS.includes(p));
+  // Si el país elegido está entre "otros", desplegamos para que se vea seleccionado.
+  if (otros.includes(state.pais)) paisOtrosAbierto = true;
+
+  const cardHtml = (pais) => {
     const precioUSD = precioTims(state.posicion, pais, state.seniority);
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "country" + (pais === state.pais ? " is-active" : "");
-    const badges = [];
-    if (PAISES_RECOMENDADOS.includes(pais)) badges.push(`<span class="tag tag-rec">${t("tagRec")}</span>`);
-    if (pais === cheapest) badges.push(`<span class="tag tag-cheap">${t("tagCheap")}</span>`);
     const priceHtml = precioUSD != null
       ? `<span class="country-price">${fmt(toDisplay(precioUSD, "USD"))}/mes</span>`
       : `<span class="country-price na">—</span>`;
-    b.innerHTML =
+    const cheapBadge = pais === cheapest ? `<span class="country-badges"><span class="tag tag-cheap">${t("tagCheap")}</span></span>` : "";
+    return `<button type="button" class="country${pais === state.pais ? " is-active" : ""}" data-pais="${pais}">` +
       `<span class="country-flag">${PAIS_FLAG[pais] || "🌎"}</span>` +
-      `<span class="country-name">${pais}</span>` + priceHtml +
-      (badges.length ? `<span class="country-badges">${badges.join("")}</span>` : "");
-    b.addEventListener("click", () => { state.pais = pais; renderPaisGrid(); });
-    grid.appendChild(b);
+      `<span class="country-name">${pais}</span>` + priceHtml + cheapBadge + `</button>`;
+  };
+
+  let html = "";
+  html += `<div class="pais-sec-h"><span class="pais-sec-t">★ ${t("paisRecom")}</span><span class="pais-sec-line"></span></div>`;
+  html += `<div class="country-grid">${recom.map(cardHtml).join("")}</div>`;
+  if (otros.length) {
+    const label = paisOtrosAbierto ? t("paisOcultarOtros") : t("paisVerOtros");
+    html += `<button type="button" class="pais-toggle${paisOtrosAbierto ? " open" : ""}" id="paisToggle">` +
+      `<span>${label} (${otros.length})</span><span class="pais-toggle-arrow">▼</span></button>`;
+    html += `<div class="pais-otros${paisOtrosAbierto ? " open" : ""}"><div class="country-grid">${otros.map(cardHtml).join("")}</div></div>`;
   }
+  cont.innerHTML = html;
+
+  cont.querySelectorAll(".country").forEach((b) => {
+    b.addEventListener("click", () => { state.pais = b.dataset.pais; renderPaisGrid(); });
+  });
+  const tg = $("#paisToggle");
+  if (tg) tg.addEventListener("click", () => { paisOtrosAbierto = !paisOtrosAbierto; renderPaisGrid(); });
 }
 
 // Primas como chips seleccionables en flujo (toggle al tocar), por categoría.
